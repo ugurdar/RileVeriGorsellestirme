@@ -1,0 +1,335 @@
+# ggplot2 Kütüphanesi
+
+## ggplot2 Katmanları
+
+
+```{r knitr-logo, out.width='100%', fig.show='hold',echo=FALSE}
+knitr::include_graphics('katman.jpeg')
+```
+
+- Temalar
+- Koordinatlar (coordinates) 
+- İstatistikler (statistics)
+- Görünüşler/kesimler (facets)
+  * Kesimler, her biri verilerin farklı bir alt kümesini gösteren küçük katlar oluşturur.
+- Geometriler (geometries)
+  * Verinin hangi tipte, nasıl görselleştirileceğinin belirlenmesi (serpilme diyagramı, sütun grafiği vb.)
+- Estetikler (aesthetics mapping) 
+  * Grafikte görülmek istenilen şeyler (x ve y eksenlerinin pozisyonları, renkler, şekiller, boyutlar vb.)
+- Veri
+
+```{r warning=FALSE,message=FALSE}
+library(ggplot2)
+library(dplyr) # veri manipülasyonu
+library(tidyr) # veri manipülasyonu
+library(knitr) # tablolar 
+```
+
+### Veri
+
+#### Geniş tipte veri
+
+```{r echo=FALSE}
+iris  %>% head() %>% kable()
+```
+
+(Aşağıdaki grafikler bu veri seti ile yapılmıştır.)
+
+#### Uzun tipte veri
+
+```{r echo=FALSE}
+iris_1 <-
+  iris %>%
+  group_by(Species) %>%
+  slice(1) %>%head()
+iris_1 %>% gather(key = "Species_turu", value = "olcum", -Species) %>% kable()
+```
+
+
+tidyr::gather() uzun formattaki veri setini geniş formata çevirir.
+
+tidyr::spread() uzun formattaki veri setini geniş formata çevirir.
+
+
+### Estetikler
+
+```{r}
+library(ggplot2)
+ggplot(iris, aes(x=Sepal.Length, y = Sepal.Width))
+```
+
+### Geometriler
+
+```{r}
+ggplot(iris, aes(x=Sepal.Length, y = Sepal.Width)) +
+  geom_point()
+```
+
+### Facets
+
+```{r}
+ggplot(iris, aes(x=Sepal.Length, y = Sepal.Width)) +
+  geom_point() +
+  facet_grid(~Species)
+```
+
+### İstatistikler
+
+```{r}
+ggplot(iris, aes(x=Sepal.Length, y = Sepal.Width)) +
+  geom_point() +
+  facet_grid(~Species) +
+  stat_smooth(method='lm')
+```
+
+### Koordinatlar
+
+```{r}
+ggplot(iris, aes(x=Sepal.Length, y = Sepal.Width)) +
+  geom_point() +
+  facet_grid(~Species) +
+  stat_smooth(method='lm') +
+  scale_y_continuous("Kalinlik(cm)", limits = c(2,8))
+```
+
+### Temalar
+
+```{r}
+ggplot(iris, aes(x=Sepal.Length, y = Sepal.Width)) +
+  geom_point() +
+  facet_grid(~Species) +
+  stat_smooth(method='lm') +
+  scale_y_continuous("Kalinlik(cm)") + 
+  theme_bw()
+```
+
+## Grafik tipleri
+
+ggplot2 kütüphanesinde katmanlar ayrı ayrı saklanabilir.
+
+```{r}
+mtcars %>% select(wt,mpg) %>% head() %>% kable()
+```
+
+
+```{r }
+p1 <- ggplot(mtcars, aes(x = wt, y = mpg)) 
+p1
+```
+
+
+```{r}
+p1 +
+  labs(title = "Grafik başlığı",x = "x ekseni",y = "y ekseni")
+```
+
+### Serpilme diyagramı
+
+İki sürekli değişken arasındaki ilişiyi görselleştirmek için kullanılır.
+
+```{r}
+p1 + geom_point()
+```
+
+
+### Histogram
+
+Bir aralık ölçeğinde ölçülen kesikli veya sürekli verileri görselleştirmek için kullanılır.
+
+```{r}
+ggplot(mtcars, aes(mpg)) +
+  geom_histogram()
+```
+
+Grupların genişliği bindwith argümanı ile değiştirilebilir(dafult değeri 30)
+
+```{r warning=FALSE,message=FALSE}
+ggplot(mtcars, aes(mpg)) +
+  geom_histogram(aes(y = ..density..))
+```
+
+### Bar grafiği
+
+Kategorik değişkenlerin görselleştirilmesinde kullanılır.
+
+```{r}
+unique(mtcars %>% select(cyl))
+```
+
+
+```{r}
+ggplot(mtcars, aes(x = cyl, fill = factor(am))) +
+  geom_bar(position = "stack")
+```
+
+ggplot2 veri tiplerine duyarlıdır!
+
+```{r}
+ggplot(mtcars, aes(x = as.factor(cyl), fill = factor(am))) +
+  geom_bar(position = "stack") +
+  coord_flip()
+```
+
+```{r}
+ggplot(mtcars, aes(x = cyl, fill = factor(am))) +
+  geom_bar(position = "fill")
+```
+
+```{r}
+ggplot(mtcars, aes(x = cyl, fill =factor(am))) +
+  geom_bar(position = "dodge")
+```
+
+### Çizgi grafiği
+
+```{r}
+economics %>%  head() %>% kable()
+```
+
+```{r}
+ggplot(economics, aes(x = date, y = unemploy)) +
+  geom_line()
+```
+
+```{r}
+ggplot(ChickWeight, aes(Time, weight, group=Chick)) +
+  geom_line()
+```
+
+
+```{r}
+ChickWeight %>% head() %>% kable()
+```
+
+```{r}
+ggplot(ChickWeight, aes(Time, weight, color=Chick)) +
+  geom_line()
+```
+
+### Dağılım Grafiği
+
+```{r}
+ChickWeight %>%
+  ggplot( aes(x=weight)) +
+    geom_density(fill="#69b3a5", color="#e9ecef", alpha=0.8)
+```
+
+### Kutu grafiği
+
+```{r}
+data <- data.frame(
+  name=c( rep("A",500), rep("B",500), rep("B",500), rep("C",20), rep('D', 100)  ),
+  value=c( rnorm(500, 10, 5), rnorm(500, 13, 1), rnorm(500, 18, 1), rnorm(20, 25, 4), rnorm(100, 12, 1) )
+)
+data %>%
+ggplot( aes(x=name, y=value, fill=name)) +
+    geom_boxplot() +
+    geom_jitter(color="black", size=0.4, alpha=0.9)
+```
+
+### Daha fazla tipte grafik
+
+[R Graph Gallery](https://r-graph-gallery.com)
+
+## esquisse Paketi
+
+esquisse paketi, verileri ggplot2 paketi ile görselleştirerek etkileşimli olarak keşfetmenizi sağlar.
+
+```{r}
+# install.packages("esquisse")
+library(esquisse)
+# esquisser()
+# install.packages("palmerpenguins")
+# esquisse::esquisser(palmerpenguins::penguins)
+```
+
+![](esquisse.gif){width=100%}
+
+### Örnek
+
+ggplot2 ile komplike grafikler yapılabilir
+
+```{r}
+# Kaynak: https://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html
+library(dplyr)
+theme_set(theme_classic())
+source_df <- read.csv("https://raw.githubusercontent.com/jkeirstead/r-slopegraph/master/cancer_survival_rates.csv")
+
+# Define functions. Source: https://github.com/jkeirstead/r-slopegraph
+tufte_sort <- function(df, x="year", y="value", group="group", method="tufte", min.space=0.05) {
+    ## First rename the columns for consistency
+    ids <- match(c(x, y, group), names(df))
+    df <- df[,ids]
+    names(df) <- c("x", "y", "group")
+
+    ## Expand grid to ensure every combination has a defined value
+    tmp <- expand.grid(x=unique(df$x), group=unique(df$group))
+    tmp <- merge(df, tmp, all.y=TRUE)
+    df <- mutate(tmp, y=ifelse(is.na(y), 0, y))
+  
+    ## Cast into a matrix shape and arrange by first column
+    require(reshape2)
+    tmp <- dcast(df, group ~ x, value.var="y")
+    ord <- order(tmp[,2])
+    tmp <- tmp[ord,]
+    
+    min.space <- min.space*diff(range(tmp[,-1]))
+    yshift <- numeric(nrow(tmp))
+    ## Start at "bottom" row
+    ## Repeat for rest of the rows until you hit the top
+    for (i in 2:nrow(tmp)) {
+        ## Shift subsequent row up by equal space so gap between
+        ## two entries is >= minimum
+        mat <- as.matrix(tmp[(i-1):i, -1])
+        d.min <- min(diff(mat))
+        yshift[i] <- ifelse(d.min < min.space, min.space - d.min, 0)
+    }
+
+    
+    tmp <- cbind(tmp, yshift=cumsum(yshift))
+
+    scale <- 1
+    tmp <- melt(tmp, id=c("group", "yshift"), variable.name="x", value.name="y")
+    ## Store these gaps in a separate variable so that they can be scaled ypos = a*yshift + y
+
+    tmp <- transform(tmp, ypos=y + scale*yshift)
+    return(tmp)
+   
+}
+
+plot_slopegraph <- function(df) {
+    ylabs <- subset(df, x==head(x,1))$group
+    yvals <- subset(df, x==head(x,1))$ypos
+    fontSize <- 3
+    gg <- ggplot(df,aes(x=x,y=ypos)) +
+        geom_line(aes(group=group),colour="grey80") +
+        geom_point(colour="white",size=8) +
+        geom_text(aes(label=y), size=fontSize, family="American Typewriter") +
+        scale_y_continuous(name="", breaks=yvals, labels=ylabs)
+    return(gg)
+}    
+
+## Prepare data    
+df <- tufte_sort(source_df, 
+                 x="year", 
+                 y="value", 
+                 group="group", 
+                 method="tufte", 
+                 min.space=0.05)
+
+df <- transform(df, 
+                x=factor(x, levels=c(5,10,15,20), 
+                            labels=c("5 years","10 years","15 years","20 years")), 
+                y=round(y))
+
+## Plot
+plot_slopegraph(df) + labs(title="Estimates of % survival rates") + 
+                      theme(axis.title=element_blank(),
+                            axis.ticks = element_blank(),
+                            plot.title = element_text(hjust=0.5,
+                                                      family = "American Typewriter",
+                                                      face="bold"),
+                            axis.text = element_text(family = "American Typewriter",
+                                                     face="bold"))
+```
+

@@ -1,0 +1,382 @@
+
+# Highcharter Kütüphanesi
+
+[highcharter](https://jkunst.com/highcharter/index.html) kütüphanesi, JavaScript dilinde bulunan [highcharts](https://www.highcharts.com/) paketinin R diline uyarlanmış halidir. 
+
+## Neden highcharter?
+
+- Fonksiyonellik
+- İnteraktif veri görselleştirme
+- Karşılaştırma grafikleri
+- JS gücü
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+library(dplyr)
+library(knitr)
+```
+
+```{r}
+# install.packages("highcharter")
+library(highcharter)
+```
+
+### Serpilme Diyagramı
+
+
+
+```{r}
+# install.packages("palmerpenguins")
+library(palmerpenguins)
+data(penguins, package = "palmerpenguins") 
+hchart(
+  penguins,
+  "scatter",
+  hcaes(x = flipper_length_mm, y = bill_length_mm, group = species)
+)
+```
+
+### Histogram
+
+```{r}
+set.seed(1)
+data = data.frame(
+        cinsiyet = factor(rep(c("Kadin", "Erkek"), each=100)),
+        kilo = c(rnorm(100, 55), rnorm(100, 58))
+        )
+data %>% head() %>% kable()
+```
+
+```{r}
+hchart(
+  data$kilo, 
+  color = "red", name = "Kilo"
+  )
+```
+
+### Bar grafiği
+
+```{r}
+library(gapminder)
+gapminder%>%
+       dplyr::filter(year == 2007)%>%
+        dplyr::arrange(-pop) %>%
+hchart( type = "column", #type = "bar" olursa yatay olur
+        hcaes(x = country, y = pop),
+        color ='red')
+```
+
+### Çizgi grafiği
+
+```{r}
+data(economics_long, package = "ggplot2")
+
+economics_long2 <- dplyr::filter(economics_long, variable %in% c("pop", "uempmed", "unemploy"))
+
+economics_long2 %>% head() %>% kable()
+```
+
+```{r}
+hchart(economics_long2, "line", hcaes(x = date, y = value01, group = variable))
+```
+
+```{r}
+highchart() |>
+  hc_add_series(data = sample(1:12)) |> 
+  hc_add_series(data = sample(1:12) + 10) |> 
+  hc_tooltip(
+    # tooltip üzerine çizgi ekler (daha iyi takip edebilmek için)
+    crosshairs = TRUE,
+    # aynı anda tüm değerleri görebilmek için
+    sort = TRUE
+    ) 
+```
+
+** Farklı özellikler için highcharts sitesinden yararlanılabilir: **
+[highcharts dataLabels](https://api.highcharts.com/highcharts/plotOptions.series.dataLabels)
+
+### Dağılım grafiği
+
+
+```{r}
+density(data$kilo)
+```
+
+
+```{r}
+hchart(
+  density(data$kilo), 
+  type = "area", name = "Kilo"
+  )
+```
+
+
+```{r}
+kadin <- data %>% filter(cinsiyet == "Kadin")
+erkek <- data %>% filter(cinsiyet == "Erkek")
+hchart(
+  density(erkek$kilo), type = "area", 
+   name = "Erkek"
+  ) %>%
+  hc_add_series(
+    density(kadin$kilo), type = "area",
+    name = "Kadın"
+    )
+```
+
+
+
+### Kutu grafiği
+
+```{r}
+library(readr)
+# Verinin yüklenmesi ve hazırlığı
+df <-
+  read_csv(
+    "https://raw.githubusercontent.com/mekhatria/demo_highcharts/master/Olympics2012CapitalLetter.csv"
+  )
+df = subset(df, select = -c(nationality, date_of_birth, name, age))
+
+my_data <- df %>% filter((sport == "Gymnastics" &
+                   sex == "male")  |
+                  (sport == "Canoe" &
+                     sex == "male") |
+                  (sport == "Hockey" &
+                     sex == "male") | (sport == "Modern Pentathlon" & sex == "male")
+  )
+my_data = subset(my_data, select = -c(sex))
+
+my_data %>% head() %>% kable()
+```
+
+```{r}
+hcboxplot(
+  x = my_data$height,
+  var = my_data$sport,
+  name = "Length",
+  color = "#2980b9",
+  outliers = TRUE
+) %>%
+  hc_chart(type = "column") %>% # type="bar" olursa yatay eksende gözükür
+  # En üstte bulunan başlık
+  hc_title(text = "Male height by descipline (Olympic 2012)") %>%
+  # y eksenindeki değişiklikler için
+  hc_yAxis(title = list(text = "Height in metre")) %>%
+  # Grafiğin üstüne serpilme diyagramı eklemek için
+  hc_add_series(
+    data = my_data,
+    type = "scatter",
+    hcaes(x = "sport", y = "my_data$height", group = "sport")
+  ) %>%
+  # serpilme diyagramı ayarları için scatter = list(...)
+  hc_plotOptions(scatter = list(
+    color = "red",
+    marker = list(
+      radius = 2,
+      symbol = "circle",
+      lineWidth = 1
+    )
+  ))  %>%
+  hc_plotOptions(scatter = list(jitter = list(x = .1, y = 0)))
+```
+
+
+### Örnekler
+
+```{r}
+data(favorite_bars)
+favorite_bars %>% head() %>% kable()
+```
+
+```{r}
+data(favorite_pies)
+favorite_pies %>% head() %>% kable()
+```
+
+
+```{r}
+highchart() |> 
+  # Data
+  hc_add_series(
+    favorite_pies, 
+    "column",
+    hcaes(
+      x = pie,
+      y = percent
+      ),
+    name = "Pie"
+    ) |>
+  hc_add_series(
+    favorite_bars,
+    "pie",
+    hcaes(
+      name = bar,
+      y = percent
+      ),
+    name = "Bars"
+    ) |>
+  hc_plotOptions(
+    series = list(
+      showInLegend = FALSE,
+      pointFormat = "{point.y}%",
+      # her bir kategori için farklı renk
+      colorByPoint = TRUE
+      ),
+    pie = list(
+      # pie chart'ın konumu ve boyutu
+      center = c('30%', '10%'),
+      size = 120,
+      dataLabels = list(enabled = FALSE)
+      )
+    ) |>
+  # eksenler
+  hc_yAxis(
+    title = list(text = "percentage of tastiness"),
+    labels = list(format = "{value}%"), 
+    max = 100
+  ) |> 
+  hc_xAxis(
+    categories = favorite_pies$pie
+    ) |>
+  # Titles, subtitle, caption and credits
+  hc_title(
+    text = "How I Met Your Mother: Pie Chart Bar Graph"
+  ) |> 
+  hc_subtitle(
+    text = "This is a bar graph describing my favorite pies
+    including a pie chart describing my favorite bars"
+  ) |>
+  hc_caption(
+    text = "The values represented are in percentage of tastiness and awesomeness."
+    ) |> 
+  hc_credits(
+    enabled = TRUE, text = "Source: HIMYM",
+    href = "https://www.youtube.com/watch?v=f_J8QU1m0Ng",
+    style = list(fontSize = "12px")
+  ) |> 
+  hc_size(
+    height = 600
+    )
+```
+
+
+
+```{r}
+df <- data.frame(
+  stringsAsFactors = FALSE,
+  name = c(
+    "The Left",
+    "Social Democratic Party",
+    "Alliance 90/The Greens",
+    "Free Democratic Party",
+    "Christian Democratic Union",
+    "Christian Social Union in Bavaria",
+    "Alternative for Germany"
+  ),
+  count = c(69, 153, 67, 80, 200, 46, 94),
+  col = c("#BE3075", "#EB001F", "#64A12D", "#FFED00",
+          "#000000", "#008AC5", "#009EE0"
+  ),
+  abbrv = c("DIE LINKE", "SPD", "GRÜNE", "FDP", "CDU", "CSU", "AfD")
+)
+
+hchart(
+  df,
+  type="item",
+  hcaes(
+    name = name,
+    y = count,
+    label = abbrv,
+    color = col
+  ),
+  name = "Representatives",
+  # legendda gösterilmesi için
+  showInLegend = TRUE,
+  size = "100%",
+  # pie chartın yerinin grafik alanına göre belirlenmesi (yatay, dikey)
+  center = list("50%", "75%"),
+  # pie chartarın başlama derecesi
+  startAngle = -100,
+  # pie chartın bitiş dercesi
+  endAngle  = 100
+) %>%
+  hc_title(text = "Item chart with different layout") %>%
+  hc_legend(labelFormat = '{name} <span style="opacity: 0.4">{y}</span>')
+```
+
+```{r}
+library(forcats)
+library(stringr)
+library(purrr)
+pkmn_min <- as.data.frame(pokemon) |>
+  count(type_1, color = type_1_color) |>
+  mutate(type_1 = fct_reorder(type_1, .x = n)) |>
+  arrange(desc(type_1))
+
+pkmn_ddn <- pokemon |>
+  count(type_1, type_2, color = type_mix_color) |>
+  arrange(type_1, desc(n)) |>
+  mutate(type_2 = ifelse(is.na(type_2), str_c("only ", type_1), type_2)) |>
+  group_nest(type_1) |>
+  mutate(
+    id = type_1,
+    type = "column",
+    # in the drilldown we'll give the mapping via creating the columns
+    data = map(data, mutate, name = type_2, y  = n),
+    data = map(data, list_parse)
+  )
+
+hchart(
+  pkmn_min,
+  type = "column",
+  hcaes(x = type_1, y = n, color = color, drilldown = type_1),
+  name = "Pokémons"
+  ) |>
+  hc_drilldown(
+    activeAxisLabelStyle = list(textDecoration = "none"),
+    allowPointDrilldown = TRUE,
+    series = list_parse(pkmn_ddn)
+  ) |>
+  hc_yAxis(
+    title = list(text = ""),
+    endOnTick = FALSE,
+    opposite = TRUE
+    ) |>
+  hc_xAxis(
+    title = list(text = ""),
+    endOnTick = FALSE,
+    gridLineWidth = 0,
+    tickWidth = 0
+    ) |>
+  hc_chart(
+    style = list(fontFamily = "Gloria Hallelujah")
+  )
+```
+
+
+```{r warning=FALSE,message=FALSE}
+library(quantmod)
+SPY <- getSymbols("SPY", from = Sys.Date() - lubridate::years(1), auto.assign = FALSE)
+SPY <- adjustOHLC(SPY)
+
+SPY.SMA.10 <- SMA(Cl(SPY), n = 5)
+SPY.SMA.200 <- SMA(Cl(SPY), n = 100)
+SPY.RSI.14 <- RSI(Cl(SPY))
+SPY.RSI.SellLevel <- xts(rep(70, NROW(SPY)), index(SPY))
+SPY.RSI.BuyLevel <- xts(rep(30, NROW(SPY)), index(SPY))
+
+
+highchart(type = "stock") |> 
+  # create axis :)
+  hc_yAxis_multiples(create_yaxis(3, height = c(2, 1, 1), turnopposite = TRUE)) |> 
+  hc_add_series(SPY, yAxis = 0, name = "SPY") |> 
+  hc_add_series(SPY.SMA.10, yAxis = 0, name = "Fast MA") |> 
+  hc_add_series(SPY.SMA.200, yAxis = 0, name = "Slow MA") |> 
+  hc_add_series(SPY$SPY.Volume, color = "gray", yAxis = 1, name = "Volume", type = "column") |> 
+  hc_add_series(SPY.RSI.14, yAxis = 2, name = "Osciallator", color = hex_to_rgba("green", 0.7)) |>
+  hc_add_series(SPY.RSI.SellLevel, color = hex_to_rgba("red", 0.7), yAxis = 2, name = "Sell level") |> 
+  hc_add_series(SPY.RSI.BuyLevel, color = hex_to_rgba("blue", 0.7), yAxis = 2, name = "Buy level") |> 
+  hc_tooltip(valueDecimals = 2) |> 
+  hc_size(height = 800)
+```
+
+
